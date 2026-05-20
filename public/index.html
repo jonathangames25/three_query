@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ThreeQuery Engine</title>
+    <meta name="description" content="A simple query language engine for Three.js prototyping.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div id="ui-layer">
+        <div class="header">
+            <h1><span class="highlight">Three</span>Query Engine</h1>
+            <div style="display: flex; gap: 0.8rem;">
+                <button id="btn-scripts" class="glass-btn">Scripts</button>
+                <button id="btn-help" class="glass-btn">Help / Cheatsheet</button>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <div id="output-panel" class="glass-panel">
+                <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span>Console Output</span>
+                    <button id="btn-toggle-console" class="glass-btn" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; border-radius: 4px;">Mute</button>
+                </div>
+                <div id="log-container"></div>
+            </div>
+        </div>
+
+        <div class="input-container glass-panel">
+            <input type="text" id="query-input" placeholder="Type your query (e.g. spawn type=mesh shape=box name=box1)">
+            <button id="btn-submit" class="primary-btn">Execute Query</button>
+        </div>
+    </div>
+
+    <div id="help-modal" class="modal hidden">
+        <div class="modal-content glass-panel" style="max-width: 800px; max-height: 90vh;">
+            <h2>Prototyping Guide & Cheatsheet</h2>
+            <div class="modal-body">
+                <h3>1. Built-in Animation Loops (No Scripting Needed)</h3>
+                <p>Animate translations and rotations continuously inside the Three.js loop by specifying speeds and directions on spawn or modify.</p>
+                <ul>
+                    <li><strong>Continuous Rotation:</strong> <code>modify name=mybox rotateSpeed=90 rotateDirection=0,1,0</code> (Rotates on Y axis at 90 degrees/sec)</li>
+                    <li><strong>Continuous Movement:</strong> <code>modify name=mybox moveSpeed=5 moveDirection=0,0,1</code> (Moves forward along Z axis at 5 units/sec)</li>
+                    <li><strong>Rotation Axis Shortcuts:</strong> Directions can be specified as axis values like <code>1,0,0</code>, or shortcut strings: <code>x</code>, <code>y</code>, <code>z</code>, <code>up</code>, <code>down</code>, <code>left</code>, <code>right</code>, <code>forward</code>, <code>back</code>.</li>
+                </ul>
+
+                <h3>2. Input-Driven Animations (No Scripting Needed)</h3>
+                <p>Trigger movements or rotations only when specific keys are held by passing the key name to <code>moveInput</code> or <code>rotateInput</code>. Key values include standard letters (<code>w</code>, <code>a</code>, <code>s</code>, <code>d</code>) or arrows (<code>up_arrow</code>, <code>down_arrow</code>, <code>left_arrow</code>, <code>right_arrow</code>, <code>space</code>).</p>
+                <ul>
+                    <li><strong>Move left on ArrowLeft:</strong> <code>modify name=ship moveSpeed=10 moveDirection=left moveInput=left_arrow</code></li>
+                    <li><strong>Move right on ArrowRight:</strong> <code>modify name=ship moveSpeed=10 moveDirection=right moveInput=right_arrow</code></li>
+                    <li><strong>Continuous rotation when pressing Space:</strong> <code>modify name=wheel rotateSpeed=180 rotateDirection=z rotateInput=space</code></li>
+                </ul>
+
+                <h3>3. Grouping and Hierarchies (Transforms)</h3>
+                <p>Use <code>transform</code> types to create pivots/groups. Linking child meshes to parent transforms allows you to move, rotate, or scale the entire group at once.</p>
+                <ul>
+                    <li><strong>Create Pivot:</strong> <code>spawn type=transform name=pivot position=0,3,0</code></li>
+                    <li><strong>Link meshes:</strong> <code>link child=orbiter1 parent=pivot</code></li>
+                    <li><strong>Orbit all children:</strong> <code>modify name=pivot rotateSpeed=60 rotateDirection=y</code></li>
+                </ul>
+
+                <h3>4. Physics & Collisions</h3>
+                <p>Add physics rigid bodies and colliders to objects to make them fall, bounce, and collide.</p>
+                <ul>
+                    <li><strong>Spawn Dynamic Box:</strong> <code>spawn type=mesh shape=box name=crate position=0,10,0</code></li>
+                    <li><strong>Add Dynamic Physics:</strong> <code>spawn type=collision target=crate shape=box static=false</code></li>
+                    <li><strong>Spawn Static Ground:</strong> <code>spawn type=mesh shape=plane name=floor position=0,0,0 scale=50,1,50</code></li>
+                    <li><strong>Add Static Physics:</strong> <code>spawn type=collision target=floor shape=box static=true</code></li>
+                </ul>
+
+                <h3>5. Character Controller</h3>
+                <p>Spawn an active First Person Controller to explore the scene manually with WASD + Mouse.</p>
+                <ul>
+                    <li><strong>Spawn FPC:</strong> <code>spawn type=character name=hero position=0,2,5</code></li>
+                </ul>
+
+                <h3>6. Dynamic Skybox & Environment</h3>
+                <ul>
+                    <li><strong>Change Skybox & Fog Color:</strong> <code>modify name=skybox color=#020617</code> or <code>spawn type=skybox color=#020617</code></li>
+                </ul>
+
+                <h3>7. Command Syntax Reference</h3>
+                <ul>
+                    <li><strong>Spawn:</strong> <code>spawn type=[mesh|light|transform|skybox|collision|character|script] name=[name] [args...]</code></li>
+                    <li><strong>Modify:</strong> <code>modify name=[name] position=[x,y,z] rotation=[x,y,z] scale=[x,y,z] color=[hex] intensity=[val]</code></li>
+                    <li><strong>Delete:</strong> <code>delete name=[name]</code></li>
+                    <li><strong>Link:</strong> <code>link child=[name] parent=[name]</code></li>
+                    <li><strong>Get:</strong> <code>get name=[name|all]</code></li>
+                </ul>
+
+                <div style="margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--border-glass); text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+                    Developed by <strong>Jonathan Uwumugisha</strong>
+                </div>
+            </div>
+            <button id="btn-close-help" class="primary-btn">Close</button>
+        </div>
+    </div>
+
+    <div id="scripts-modal" class="modal hidden">
+        <div class="modal-content glass-panel" style="max-width: 650px; max-height: 90vh; display: flex; flex-direction: column;">
+            <h2>Active Scripts Manager</h2>
+            <div class="modal-body" style="flex-grow: 1; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto;">
+                <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                    <label for="script-select" style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">Select Script to Edit:</label>
+                    <select id="script-select" class="glass-btn" style="width: 100%; text-align: left; background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass);"></select>
+                </div>
+                <div id="script-editor-container" class="hidden" style="display: flex; flex-direction: column; gap: 1rem; flex-grow: 1;">
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                        <label for="script-target" style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">Target Object Name:</label>
+                        <input type="text" id="script-target" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); border-radius: 8px; padding: 0.6rem; color: white; outline: none; font-family: inherit;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; flex-grow: 1;">
+                        <label for="script-onstart" style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">onStart JS Code:</label>
+                        <textarea id="script-onstart" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); border-radius: 8px; padding: 0.6rem; color: #a855f7; outline: none; font-family: monospace; font-size: 0.9rem; resize: vertical; min-height: 100px; flex-grow: 1;"></textarea>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; flex-grow: 1;">
+                        <label for="script-onupdate" style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">onUpdate JS Code (receives engine, dt):</label>
+                        <textarea id="script-onupdate" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-glass); border-radius: 8px; padding: 0.6rem; color: #a855f7; outline: none; font-family: monospace; font-size: 0.9rem; resize: vertical; min-height: 180px; flex-grow: 1;"></textarea>
+                    </div>
+                </div>
+                <div id="no-scripts-msg" style="text-align: center; color: var(--text-muted); padding: 2rem 0;">
+                    No active scripts found in the scene.
+                </div>
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid var(--border-glass);">
+                <button id="btn-save-script" class="primary-btn hidden">Save & Restart</button>
+                <button id="btn-close-scripts" class="glass-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Maps -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.150.1/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
